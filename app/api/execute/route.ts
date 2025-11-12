@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ChatOpenAI } from "@langchain/openai";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { SerpAPI } from "@langchain/community/tools/serpapi";
+import { createAgent } from "langchain";
 
 export async function POST(req: NextRequest) {
+  const tool = new SerpAPI(process.env.SERPAPI_API_KEY);
+  const tools = [tool];
+
   try {
-    // 目的とタスクを取得
     const { objective, task } = await req.json();
 
     const chat = new ChatOpenAI({
@@ -13,22 +16,33 @@ export async function POST(req: NextRequest) {
       temperature: 0.7,
     });
 
-    // プロンプト
-    const chatPrompt = ChatPromptTemplate.fromMessages([
-      [
-        "system",
-        "You are an AI who performs one task based on the following objective: {objective}. Please answer in Japanese.",
-      ],
-      ["human", "Your task: {task}. Response:"],
-    ]);
+    const agent = createAgent({
+      model: chat,
+      tools,
+    });
 
-    // 実行
-    const chain = chatPrompt.pipe(chat);
-    const response = await chain.invoke({ objective, task });
+    const input = `
+      Objective: ${objective}
+      Task: ${task}
 
-    return NextResponse.json({ response: response.content });
+      (Please answer in Japanese)
+    `;
+
+    const result = await agent.invoke({
+      messages: [{ role: "user", content: input }],
+    });
+
+    const lastMessage = result.messages[result.messages.length - 1];
+    const response = lastMessage.content;
+
+    return NextResponse.json({ response });
   } catch (error) {
     console.log("error", error);
-    return NextResponse.error();
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    return new NextResponse(JSON.stringify({ error: errorMessage }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
