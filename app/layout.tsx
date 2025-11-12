@@ -15,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-gray-50">
+      <body className="bg-neutral-50">
         <div className="flex flex-col min-h-screen">
           <Navigation />
           <main className="flex-1 container max-w-7xl mx-auto px-3 sm:px-5 py-3 sm:py-5">
