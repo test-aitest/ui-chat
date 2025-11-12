@@ -3,10 +3,17 @@
 import axios, { CancelTokenSource } from "axios";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MessageType, TaskType } from "./types";
+import MCPCard from "./MCPCard";
+import CommandSuggestion from "./CommandSuggestion";
+import { slashCommands } from "@/types/commands";
 
 const Main = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [messages, setMessages] = useState<MessageType[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] =
+    useState<number>(0);
+  const [filteredCommands, setFilteredCommands] = useState(slashCommands);
   const objectiveRef = useRef<HTMLTextAreaElement>(null);
   const iterationRef = useRef<HTMLInputElement>(null);
   const messageEndRef = useRef<HTMLDivElement>(null);
@@ -34,6 +41,41 @@ const Main = () => {
     }
 
     sourceRef.current = axios.CancelToken.source();
+
+    // Check for slash command
+    if (objective.startsWith("/search ")) {
+      const query = objective.substring(8).trim();
+      const messageObjective = { type: "objective", text: objective };
+      messageHandler(messageObjective);
+
+      try {
+        const response = await axios.post(
+          "/api/search",
+          { query },
+          { cancelToken: sourceRef.current.token }
+        );
+
+        const { message, mcpCandidates } = response.data;
+        const resultMessage = {
+          type: "mcp-search-result",
+          text: message.content,
+          mcpCandidates,
+        };
+        messageHandler(resultMessage);
+      } catch (error) {
+        if (!axios.isCancel(error)) {
+          const errorMessage = {
+            type: "task-result",
+            text: "検索中にエラーが発生しました。",
+          };
+          messageHandler(errorMessage);
+        }
+      } finally {
+        setLoading(false);
+        objectiveRef.current!.value = "";
+      }
+      return;
+    }
 
     const messageObjective = { type: "objective", text: objective };
     messageHandler(messageObjective);
@@ -123,6 +165,77 @@ const Main = () => {
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const lastChar = value[value.length - 1];
+
+    // スペースが含まれている場合はサジェストを表示しない
+    if (value.includes(" ")) {
+      setShowSuggestions(false);
+      return;
+    }
+
+    if (lastChar === "/") {
+      setShowSuggestions(true);
+      setFilteredCommands(slashCommands);
+      setSelectedSuggestionIndex(0);
+    } else if (value.startsWith("/")) {
+      const input = value.substring(1);
+      const filtered = slashCommands.filter((cmd) =>
+        cmd.command.substring(1).toLowerCase().startsWith(input.toLowerCase())
+      );
+      setFilteredCommands(filtered);
+      setShowSuggestions(filtered.length > 0);
+      setSelectedSuggestionIndex(0);
+    } else {
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!showSuggestions) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedSuggestionIndex((prev) =>
+        prev < filteredCommands.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedSuggestionIndex((prev) => (prev > 0 ? prev - 1 : prev));
+    } else if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      const selectedCommand = filteredCommands[selectedSuggestionIndex];
+      if (selectedCommand && objectiveRef.current) {
+        objectiveRef.current.value = selectedCommand.usage;
+        setShowSuggestions(false);
+        // Move cursor to end
+        setTimeout(() => {
+          if (objectiveRef.current) {
+            objectiveRef.current.selectionStart =
+              objectiveRef.current.value.length;
+            objectiveRef.current.selectionEnd =
+              objectiveRef.current.value.length;
+            objectiveRef.current.focus();
+          }
+        }, 0);
+      }
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleCommandSelect = (command: string) => {
+    if (objectiveRef.current) {
+      const usage = slashCommands.find((cmd) => cmd.command === command)?.usage;
+      if (usage) {
+        objectiveRef.current.value = usage;
+        setShowSuggestions(false);
+        objectiveRef.current.focus();
+      }
+    }
+  };
+
   return (
     <div>
       <div className="grid grid-cols-4 h-(--adjusted-height) mb-5 text-sm border rounded-lg">
@@ -165,6 +278,23 @@ const Main = () => {
                     </div>
                   </div>
                 </div>
+              ) : data.type === "mcp-search-result" ? (
+                <div className="mb-4">
+                  <div className="flex items-end mb-4">
+                    <div className="bg-gray-50 p-3 rounded-xl drop-shadow max-w-lg ml-4">
+                      <div className="leading-relaxed wrap-break-word whitespace-pre-wrap">
+                        {data.text}
+                      </div>
+                    </div>
+                  </div>
+                  {data.mcpCandidates && data.mcpCandidates.length > 0 && (
+                    <div className="px-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {data.mcpCandidates.map((candidate, idx) => (
+                        <MCPCard key={idx} candidate={candidate} />
+                      ))}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <></>
               )}
@@ -198,7 +328,7 @@ const Main = () => {
               disabled={loading}
             />
           </div>
-          <div className="col-span-11">
+          <div className="col-span-11 relative">
             {/* 目的入力 */}
             <textarea
               className="w-full border rounded-lg py-2 px-3 focus:outline-none bg-gray-50 focus:bg-white"
@@ -207,7 +337,16 @@ const Main = () => {
               ref={objectiveRef}
               disabled={loading}
               id="objective"
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
             />
+            {showSuggestions && (
+              <CommandSuggestion
+                commands={filteredCommands}
+                selectedIndex={selectedSuggestionIndex}
+                onSelect={handleCommandSelect}
+              />
+            )}
           </div>
         </div>
         <div className="flex items-center justify-center space-x-5">
