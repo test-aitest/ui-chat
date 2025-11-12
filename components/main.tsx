@@ -48,7 +48,7 @@ const Main = () => {
     sourceRef.current = axios.CancelToken.source();
 
     // Check for slash command
-    if (objective.startsWith("/search ")) {
+    if (objective.startsWith("/search")) {
       const query = objective.substring(8).trim();
       const messageObjective = { type: "objective", text: objective };
       messageHandler(messageObjective);
