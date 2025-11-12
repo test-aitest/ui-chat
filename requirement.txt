@@ -1,0 +1,142 @@
+Central Market place For MCP servers
+
+## **🧭 Overview**
+
+AI Agentによる「MCP Server検索＆実行統合システム」
+
+> 世の中に大量に存在するMCP Serverを、AIが自動探索・実行。
+> 
+
+> 個別統合や仕様理解を不要にし、自然言語リクエストで実世界のMCPを自在に使えるようにする。
+> 
+
+---
+
+## **💡 Problem（課題）**
+
+- MCP serverが世界中に散在し、
+    - どんなMCPが存在するか分からない
+    - 仕様・インターフェースがバラバラ
+    - 統合コストが非常に高い（1000個あれば1000個統合が必要）
+- 開発者・業務チームの課題：
+    - MCPの存在を発見できない
+    - 各サーバーごとに実行環境や認証を整える手間が膨大
+- MCP開発者の課題：
+    - ニッチなMCPを作っても見つけてもらえない
+    - ホスト・配信・発見の手段がない
+
+---
+
+## **🎯 Target Customers（顧客）**
+
+| **顧客層** | **現状の課題** | **求める価値** |
+| --- | --- | --- |
+| **開発者** | MCP統合の手間が高い | Facade経由で一括アクセス |
+| **業務チーム** | ツール連携に時間がかかる | 自然言語でMCPを呼び出せる |
+| **MCP開発者** | 公開先・ユーザー発見経路がない | Facade経由で自動的に接続される |
+
+---
+
+## **🧩 Solution（解決策）**
+
+**Facade Agent for MCP**
+
+- ユーザーは自然言語で「やりたいこと」を入力するだけ
+- Agentが自動的に最適なMCPサーバーを探索し、リクエストを実行
+- 返り値は、「使用したツール名」「行った処理」「そのレスポンス(JSON)」をまとめて返却
+- MCPごとの差異や仕様の違いは、Agentが背後で吸収
+
+---
+
+## **⚙️ Core Features（機能概要）**
+
+### **✅ v0: MCP Discovery Portal（検索ポータル）**
+
+- Web上で自然言語による検索が可能
+- 「やりたいこと」を入力すると、関連するMCPの組み合わせが提案される
+- 開発者がマーケットプレイスにMCPを提出することができる
+
+---
+
+- 提案されたMCPをそのまま実行できる
+
+### **✅ v1: Unified Execution API（統合実行API）**
+
+- API経由で自然言語からMCPサーバーを探索・実行
+- 認証はFacadeサーバーがAPI Keyで一元管理
+- 返り値は実際に行われた処理内容＋レスポンスJSONを返す
+
+### **✅ v2: Autonomous Orchestration（自動ワークフロー構築）**
+
+- Facade Agentが複数のMCPを連携して目的達成フローを自動生成
+- 例：「PDF→要約→翻訳→メール送信」を一回のリクエストで完了
+
+---
+
+## **💰 Business Model（収益モデル）**
+
+| **モデル** | **内容** |
+| --- | --- |
+| **動的料金調整** | MCPごとの処理コストや計算量に応じた変動単価 |
+| **将来案** | 利用履歴に基づく自動最適化課金や、コスト上限指定オプションなども検討可能 |
+
+---
+
+## **🧠 Technical Challenges（技術的課題）**
+
+1. **Response形式の不統一**
+    - MCPごとに異なるresponse schemaを返す
+    - → 対策：AI Agent側でschema normalizationを行い、
+        
+        「使用ツール」「処理内容」「レスポンス(JSON)」を統一形式で返却
+        
+2. **認証統一**
+    - MCPごとに異なる認証手法
+    - → 対策：FacadeがAPI Keyで一元的に代理署名・管理
+
+---
+
+## **🧩 Architecture（構成イメージ）**
+
+```mermaid
+flowchart TD
+    U["User / Business Team"] -->|"自然言語リクエスト"| F["Facade Agent API"]
+    F -->|"検索"| D["MCP Index Database"]
+    F -->|"選択・実行"| M["MCP Server(s)"]
+    M -->|"Response (JSON)"| F
+    F -->|"used tool, action, response"| U
+```
+
+---
+
+## **🌱 Future Vision（将来展開）**
+
+- オープンなMCPレジストリプラットフォーム（検索＋実行を兼ねる）
+- Verified MCP Program（セキュリティ・品質保証）
+- Facade SDKによる他アプリ連携（CLI・ブラウザ・モバイル）
+- ワークフロー自動最適化（過去の成功率に基づく選択）
+
+## **1) 画面（3つだけ）**
+
+- **/**（検索チャット＋結果一覧）
+    - テキスト入力欄（Enterで送信）
+    - 会話ログ（ユーザー/エージェント）
+    - MCP候補のカード一覧（name, endpoint, shortDescription だけ）
+- **/publish**（登録フォーム）
+    - name, description, endpoint の3項目のみ（全部必須）
+    - 送信→即時「登録成功」トースト→トップへ戻る
+- **/mcp/:id**（詳細）
+    - 上記3項目の表示のみ（編集なし）
+
+問い合わせ内容：
+部品の発注の問い合わせで、届くタイミングを知りたいという問い合わせ。
+天気によって左右する。
+→通常のお届け期間は2日
+→雨の場合は4日かかる
+
+run → python serverを内部で叩く → responseもらう → 返答内容を生成するところまでやる
+
+chat画面へのURL：https://ui-chat-phi.vercel.app/
+
+- command: "/search" を押下してコマンド入力："[https://sample-server-production-74fc.up.railway.app](https://sample-server-production-74fc.up.railway.app/)";にアクセス
+- 何もなしでコマンド入力：タスク分けされたOpenAIの出力
