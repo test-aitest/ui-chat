@@ -2,33 +2,57 @@ import { MCPCandidate } from "@/types/mcp";
 
 export const mockMCPCandidates: MCPCandidate[] = [
   {
-    name: "Web Search API",
+    id: "1",
+    title: "Web Search API",
+    iconUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=search",
     endpoint: "https://api.example.com/search",
-    shortDescription: "Search the web for relevant information",
+    metaDescription: "Search the web for relevant information",
+    fullDescription:
+      "A comprehensive web search API that provides access to real-time web data and search results.",
   },
   {
-    name: "Knowledge Base",
+    id: "2",
+    title: "Knowledge Base",
+    iconUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=knowledge",
     endpoint: "https://api.example.com/knowledge",
-    shortDescription: "Access internal knowledge base",
+    metaDescription: "Access internal knowledge base",
+    fullDescription:
+      "Internal knowledge base system for quick access to company documentation and resources.",
   },
   {
-    name: "Database Query",
+    id: "3",
+    title: "Database Query",
+    iconUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=database",
     endpoint: "https://api.example.com/database",
-    shortDescription: "Query structured data from databases",
+    metaDescription: "Query structured data from databases",
+    fullDescription:
+      "Execute queries against structured databases and retrieve organized data efficiently.",
   },
   {
-    name: "Document Parser",
+    id: "4",
+    title: "Document Parser",
+    iconUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=parser",
     endpoint: "https://api.example.com/parser",
-    shortDescription: "Extract information from documents",
+    metaDescription: "Extract information from documents",
+    fullDescription:
+      "Parse and extract structured information from various document formats including PDF, DOCX, and more.",
   },
   {
-    name: "Translation Service",
+    id: "5",
+    title: "Translation Service",
+    iconUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=translate",
     endpoint: "https://api.example.com/translate",
-    shortDescription: "Translate text between languages",
+    metaDescription: "Translate text between languages",
+    fullDescription:
+      "Multi-language translation service supporting over 100 languages with high accuracy.",
   },
   {
-    name: "Image Analysis",
+    id: "6",
+    title: "Image Analysis",
+    iconUrl: "https://api.dicebear.com/7.x/shapes/svg?seed=image",
     endpoint: "https://api.example.com/image",
-    shortDescription: "Analyze and extract data from images",
+    metaDescription: "Analyze and extract data from images",
+    fullDescription:
+      "Advanced image analysis using computer vision to extract text, objects, and insights from images.",
   },
 ];
